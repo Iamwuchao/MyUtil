@@ -3,13 +3,15 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileChannel.MapMode;
 import java.nio.channels.FileLock;
 
-
+/*
+ * 文件复制
+ * 将原文件复制到目的文件
+ */
 public class CopyFile {
 	private FileChannel sourceFileChannel;
 	private FileChannel distinationFileChannel;
@@ -18,9 +20,15 @@ public class CopyFile {
 	private long fileLength;
 	private int BUFFERSIZE=8;
 	private static int MAX_BUFFER_SIZE = 20;//1M
-	private static int BUFFER_SIZE = 10;//1K
-	private static int ISBIGFILE = 128;
-	private CopyFile(File sourceFile,File distinationFile,int bufferSize) throws FileNotFoundException
+	private static int BUFFER_SIZE = 20;//1M
+	private static int ISBIGFILE = 128;//30M 为大文件
+	
+	/*
+	 * sourceFile 源文件
+	 * distinationFile 目标文件
+	 * bufferSize 文件复制时缓存的大小 默认值为8M 
+	 */
+	private CopyFile(final File sourceFile,final File distinationFile,int bufferSize) throws Exception
 	{
 		if(bufferSize<=0||bufferSize>128)
 		{
@@ -32,7 +40,7 @@ public class CopyFile {
 		}
 		if(sourceFile.isDirectory())
 		{
-			throw new FileNotFoundException("file is directory");
+			throw new Exception("file is a directory");
 		}
 		if(!sourceFile.exists())
 		{
@@ -46,16 +54,17 @@ public class CopyFile {
 		sourceFileChannel = fileInputStream.getChannel();
 		fileOutputStream = new RandomAccessFile(distinationFile,"rws");
 		distinationFileChannel = fileOutputStream.getChannel();
+		this.BUFFERSIZE=bufferSize;
 	}
 	
-	public static void copyFile(File sourceFile,File distinationFile,int bufferSize) throws IOException
+	public static void copyFile(final File sourceFile,final File distinationFile,int bufferSize) throws Exception
 	{
 		CopyFile cbc = new CopyFile(sourceFile,distinationFile,bufferSize);
 		cbc.fileLength = sourceFile.length();
 		long times=cbc.fileLength>>BUFFER_SIZE;
 		FileLock lock = cbc.sourceFileChannel.lock();
 		try{
-			if(times>ISBIGFILE)
+			if(times<ISBIGFILE)
 				cbc.copyNormalFile();
 			else
 				cbc.copyBigFile();
@@ -71,7 +80,7 @@ public class CopyFile {
 		}
 	}
 	
-	public static void copyFile(File sourceFile,File distinationFile) throws IOException
+	public static void copyFile(final File sourceFile,final File distinationFile) throws Exception
 	{
 		copyFile(sourceFile,distinationFile,8);
 	}
@@ -103,16 +112,7 @@ public class CopyFile {
 	}
 	
 	private void copyNormalFile() throws IOException{
-	/*	int read=0;
-		ByteBuffer byteBuffer = ByteBuffer.allocate((1<<BUFFER_SIZE)*BUFFERSIZE);
-		while(read>-1)
-		{
-			read = sourceFileChannel.read(byteBuffer);
-			byteBuffer.flip();
-			distinationFileChannel.write(byteBuffer);
-			byteBuffer.flip();
-		}
-		distinationFileChannel.force(metaData);*/
 		this.distinationFileChannel.transferFrom(sourceFileChannel, 0, this.fileLength);
 	}
+	
 }
