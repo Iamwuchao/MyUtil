@@ -85,7 +85,7 @@ public class Treap<T extends Comparable> {
 			this.root = new Node(value);
 			return;
 		}
-		if(root.value.compareTo(value) > 0)
+		if(root.value.compareTo(value) <= 0)
 		{
 			if(root.rightChild!=null)
 				insertNode(root.rightChild,value);
@@ -102,6 +102,7 @@ public class Treap<T extends Comparable> {
 			if(root.leftChild!=null)
 				insertNode(root.leftChild,value);
 			else{
+				System.out.println("insert left");
 				Node node = new Node(value);
 				root.leftChild = node;
 				node.father = root;
